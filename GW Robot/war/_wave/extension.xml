@@ -1,0 +1,8 @@
+<extension location="NewWaveMenu">
+  <info id="create-wiky-wave"
+        text="New WikyWave"
+        description="Creates a new Wiki wave."/>
+  <createNewWave>
+    <participant id="wikystuff@appspot.com"></participant>
+  </createNewWave>
+</extension>
