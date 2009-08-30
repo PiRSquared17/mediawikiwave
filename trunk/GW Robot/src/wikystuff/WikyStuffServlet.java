@@ -32,7 +32,7 @@ public class WikyStuffServlet extends AbstractRobotServlet {
 				textView.append("I'm alive!\n");
 				
 				MediawikiBot bot = new MediawikiBot("http://dev.12wiki.eu/",textView);
-				bot.login("TheDevilOnLine", "bluemoon185");
+				bot.login("<<Username>>", "<<Password>>");
 				bot.getEditToken();
 				
 				String page = "User:TheDevilOnLine"; //pages.get(wavelet.getWaveId());
