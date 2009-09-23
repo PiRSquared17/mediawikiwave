@@ -1,5 +1,5 @@
 <?php
-# Copyright (C) 2008 Mark Johnston and Adam Mckaig
+# Copyright (C) 2009 Tom Maaswinkel and Kim Bruning
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,14 +23,13 @@ if (!defined('MEDIAWIKI'))
 $wgExtensionCredits['other'][] = array(
 	'name'           => 'GoogleWave',
 	'author'         => array( 'Tom Maaswinkel, Kim Bruning' ),
-	'version'        => '0.2',
+	'version'        => '0.3',
 	'description'    => 'Integrate Google wave + mediawiki',
 );
 
 
 $wgHooks['APIEditBeforeSave'][]="GoogleWave_APIEditBeforeSave";
 $wgHooks['ArticleSaveComplete'][]="GoogleWave_ArticleSaveComplete";
-$wgHooks['ArticleInsertComplete'][]="GoogleWave_ArticleInsertComplete";
 
 global $gw_wave_id;
 $gw_wave_id=null;
@@ -48,46 +47,22 @@ function GoogleWave_APIEditBeforeSave(&$EditPage, $text, &$resultArr) {
 	return true;
 }
 
-function GoogleWave_ArticleInsertComplete( &$article, &$user, $text, $summary, $minoredit, 
-$watchthis, $sectionanchor, &$flags, $revision ) { 
-	$page_id=$article->getID();
-	GoogleWave_waveID($page_id,"ArticleInsertComplete");
-	return true;
-}
-
-
 function GoogleWave_waveId($page_id, $debugstr) {
 	global $wgRequest, $gw_wave_id;
-	$logfile=fopen("/home/kim/logging/alog","a");
 	date_default_timezone_set("UTC");
-	fwrite($logfile,date("l jS \of F Y h:i:s A")."\n");
-	fwrite($logfile,"ola\n");
-	#fwrite($logfile,print_r( $wgRequest, true));
-	fwrite($logfile,"debug: ".$debugstr."\n");
-	fwrite($logfile,"page: ".$page_id."\n");
 
 	$wave_in_url=$wgRequest->getText("wave_id");
 	$wave_in_url=trim($wave_in_url);
 
-	fwrite($logfile,"rq: -".$wave_in_url."-\n");
-
 	$dbr = wfGetDB( DB_SLAVE );
 	$wave_in_database = $dbr->selectField("wave","wave_id","page_id=$page_id","GoogleWave_waveId");
 	
-	
-	fwrite($logfile,"db: -".$wave_in_database."- \n");
-	fwrite($logfile,"gl: -".$gw_wave_id."- \n");
-
 	$wave_id=$wave_in_url;
 	if (!$wave_id)
 		$wave_id=$gw_wave_id;
 	$gw_wave_id=$wave_id;
 
-	fwrite($logfile,"fl: -".$wave_id."- \n");
-	fclose($logfile);
-
 	if (!($wave_in_database) && $wave_id) {
-		fwrite($logfile,"inserting\n");
 		$dbr->insert("wave",array("page_id"=>$page_id,"wave_id"=>$wave_id));
 	}
 }
@@ -130,15 +105,6 @@ function GoogleWave_turnOffToolbar($editPage) {
 			GoogleWave_ShowUser($wave,$wgOut);
 			return false;
 		}
-		#if($editPage->mTitle == "Elephants")
-		#	$wgHooks['BeforePageDisplay'][] = array('GoogleWave_ShowUser','wavesandbox.com!w+GK0H-KpP%A');
-
-		#if($editPage->mTitle == "Wave4")
-		#	$wgHooks['BeforePageDisplay'][] = array('GoogleWave_ShowUser','wavesandbox.com!w+GK0H-KpP%A');
-
-		#if($editPage->mTitle == "Wave3")
-		#	$wgHooks['BeforePageDisplay'][] = array('GoogleWave_ShowUser','wavesandbox.com!w+Zse99PyY%B');
-
 	}
 
 	return true;
@@ -176,5 +142,4 @@ function GoogleWave_ShowUser($waveid,&$out) {
 			 }
 		}");
 	return true;
-
 }
