@@ -137,7 +137,7 @@ public class MediawikiBot {
 		log.info("obtaining edit token");
 		try {
 			db = dbf.newDocumentBuilder();
-			InputStream stream = getXML("action=query&prop=info&intoken=edit&titles="+REPLACEME.xmlfrom);
+			InputStream stream = getXML("action=query&prop=info&intoken=edit&titles="+Config.data("xmlfrom"));
 			if(stream == null)
 				return "";
 			
@@ -171,6 +171,10 @@ public class MediawikiBot {
 	}
 	
 	@SuppressWarnings("deprecation")
+	/** Create a page on the wiki.
+	 * waveId:  current wave ID
+	 * summary: an edit summary for on the wiki
+	 */
 	public void CreatePage(String a_Page, String a_Title, String a_Content, String waveId, String summary) {
 		textView.append("Createpage called");
 		a_Title = URLEncoder.encode(a_Title);
@@ -202,11 +206,6 @@ public class MediawikiBot {
 				textView.append("getPostXMLAgain fail");
 				return;
 			}
-			
-			//String rv=slurp(stream);
-			//Logger log = Logger.getLogger(MediawikiBot.class.getName());
-			//log.info("BLA\n");
-			//log.info("rv -"+rv+"-\n");
 			Document doc = db.parse(stream);
 			doc.getDocumentElement().normalize();
 			NodeList nodeLst = doc.getElementsByTagName("api");
@@ -253,15 +252,4 @@ public class MediawikiBot {
 			textView.append("\nParserConfigurationException");
 		}
 	}
-
-	/** test function only. XXX delete before production */
-	public static String slurp (InputStream in) throws IOException {
-		StringBuffer out = new StringBuffer();
-        	byte[] b = new byte[4096];
-	    	for (int n; (n = in.read(b)) != -1;) {
-			out.append(new String(b, 0, n));
-		}
-		return out.toString();
-	}
-
 }
