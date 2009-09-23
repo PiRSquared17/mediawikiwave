@@ -162,7 +162,7 @@ public class WikitextToWaveConverter {
 	
 	private static InputStream getXML(String a_GetVar) {
 		try{
-			URL url = new URL(REPLACEME.fromwiki="api.php?format=xml" + "&" + a_GetVar);
+			URL url = new URL(Config.data("wiki")+"api.php?format=xml" + "&" + a_GetVar);
 	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 	        return connection.getInputStream();
 		}catch (IOException e) {
