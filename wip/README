@@ -1,4 +1,11 @@
-This may still require cleanup, but does allow tracking of code status.
-Code not in deployable state here.
+Work In Progress
 
+these are java and php files that implement new functionality
+
+
+war/settings.xml should be copied to the war directory in your wave deployment environment.
+
+* MediawikiBot.CreatePage  has an altered interface
+
+* wave.sql can still use a little more tidying to conform to the "naive installation standard" I'll look at that later.
 
