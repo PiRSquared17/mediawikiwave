@@ -25,6 +25,8 @@ import com.google.wave.api.TextView;
 
 public class WikitextToWaveConverter {
 	public static void convert(TextView a_textView){
+		if (a_textView==null) 
+			throw new NullPointerException("a_textView is null");
 		parseTemplate(a_textView);
 		convertBold(a_textView);
 		convertItalic(a_textView);
@@ -78,7 +80,10 @@ public class WikitextToWaveConverter {
 	}
 	
 	private static void convertBold(TextView a_textView) {
-		int first_occurence = a_textView.getText().indexOf("'''");
+		String fulltext=a_textView.getText();
+		if (fulltext==null) 
+			throw new NullPointerException("fulltext == null");
+		int first_occurence = fulltext.indexOf("'''");
 		if(first_occurence == -1) {
 			return;
 		}
@@ -157,7 +162,7 @@ public class WikitextToWaveConverter {
 	
 	private static InputStream getXML(String a_GetVar) {
 		try{
-			URL url = new URL("http://dev.12wiki.eu/api.php?format=xml" + "&" + a_GetVar);
+			URL url = new URL(Config.data("wiki")+"api.php?format=xml" + "&" + a_GetVar);
 	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 	        return connection.getInputStream();
 		}catch (IOException e) {
@@ -167,6 +172,8 @@ public class WikitextToWaveConverter {
 	
 	@SuppressWarnings("deprecation")
 	private static void parseTemplate(TextView a_textView) {
+		if (a_textView==null) 
+			throw new NullPointerException("a_textView is null");
 		int first_occurence = a_textView.getText().indexOf("{{");
 		if(first_occurence == -1) {
 			return;
