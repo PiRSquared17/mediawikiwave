@@ -272,70 +272,12 @@ public class WikitextToWaveConverter {
 		fixindentiaton(tempList); // First fix the indentation of old lists
 		replaceWikiText("\n*","\n","styled-text","BULLETED"); // Lets get lists
 		tempList = textView.getStyles();
-		fixindentiaton(tempList); // Fix the indentiaton of new lists
+		//fixindentiaton(tempList); // Fix the indentiaton of new lists
 		
 	}
 	
 	private static void fixindentiaton(List<Annotation> tempList) {
-		if(tempList.size() > 0) {
-			for(int i = 0; i < tempList.size(); i++) {
-				Annotation annotation = tempList.get(i);
-				String value = annotation.getValue();
-				if(value.equals("BULLETED")) {
-					Range range = annotation.getRange();
-					String text = textView.getText();
-					
-					int start = 0;
-					int end = text.indexOf("\n",start);
-					while(end != -1) {
-						if(start == end) {
-							start++;
-							continue;
-						}
-						Range curRange = new Range(start + range.getStart() ,end + range.getStart());
-						List<Annotation> otherList = textView.getStyles(curRange);
-						
-						int currentIndentiaton = 0;
-						for(int j = 0; j < otherList.size(); j++) {
-							Annotation otherAnnotation = otherList.get(i);
-							String otherValue = otherAnnotation.getValue();
-							for(int k = 1; k <= 3; k++) {
-								if(otherValue.equals("INDENT" + k))
-									currentIndentiaton = k;
-							}
-						}
-						
-						int originalindentiaton = currentIndentiaton;
-						
-						String curText = textView.getText(curRange);
-						while(curText.startsWith("*") && currentIndentiaton < 4) {
-							currentIndentiaton++;
-							curText = curText.substring(1);
-						}
-						
-						if(originalindentiaton != currentIndentiaton) {
-							otherList = textView.getAnnotations(curRange);
-							textView.deleteAnnotations(curRange);
-							if(otherList.size() > 0) {
-								for(int j = 0; j < otherList.size(); j++) {
-									Annotation otherAnnotation = otherList.get(j);
-									String otherName = otherAnnotation.getName();
-									String otherValue = otherAnnotation.getValue();
-									
-									if(!otherName.equals("styled-text") && !otherValue.startsWith("INDENT"))
-										textView.setAnnotation(curRange, otherName, otherValue);
-								}
-							}
-							textView.setAnnotation(curRange, "styled-text", "INDENT" + currentIndentiaton);
-							
-							textView.replace(curRange, curText);
-						}
-						start = end;
-						end = text.indexOf("\n",start);
-					}
-				}
-			}
-		}
+		return;
 	}
 
 	@SuppressWarnings("deprecation")
