@@ -10,14 +10,15 @@ import com.google.wave.api.*;
 public class WikyStuffServlet extends AbstractRobotServlet {
 	
 	private boolean debug=true;
+	private boolean isInit = false;
 	
 	public void WikystuffServlet() {
 		debug = false;
 	}
 	
-	public void processEvents(RobotMessageBundle bundle) {
+	public void processEvents(RobotMessageBundle bundle) {		
 		Wavelet wavelet = bundle.getWavelet();
-          
+		
 		for (Event e: bundle.getEvents()) {
 			if(e.getType() == EventType.BLIP_SUBMITTED || e.getType() == EventType.BLIP_VERSION_CHANGED || e.getType() == EventType.WAVELET_VERSION_CHANGED) {
 				Blip blip = wavelet.appendBlip();
@@ -70,6 +71,12 @@ public class WikyStuffServlet extends AbstractRobotServlet {
 
 		Blip rootBlip=wavelet.getRootBlip();
 		
+		if(!isInit) {
+			TextView rootTextView=rootBlip.getDocument();
+			WikitextToWaveConverter.Init(rootTextView);
+			isInit = true;
+		}
+		
 		// Workaround.  BlipImpl.isDocumentAvailable can break with a NullPointerException if data is not initialized for some reason.
 		// (see issue 200 - http://code.google.com/p/google-wave-resources/issues/detail?id=200&start=100 )
 		// documentAvailable is true if rootBlip.isDocumentAvailable is true. false in all other cases
@@ -79,8 +86,7 @@ public class WikyStuffServlet extends AbstractRobotServlet {
 		} catch (NullPointerException ignored)  {}
 
 		if (documentAvailable) {
-			TextView rootTextView=rootBlip.getDocument();
-			WikitextToWaveConverter.convert(rootTextView);
+			WikitextToWaveConverter.convert();
 		}
 	}
 	

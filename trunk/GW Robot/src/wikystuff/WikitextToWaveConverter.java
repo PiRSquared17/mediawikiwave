@@ -2,8 +2,6 @@ package wikystuff;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
 
@@ -12,224 +10,391 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.google.wave.api.Annotation;
 import com.google.wave.api.Range;
-import com.google.wave.api.StyleType;
-import com.google.wave.api.StyledText;
 import com.google.wave.api.TextView;
 
 public class WikitextToWaveConverter {
-	public static void convert(TextView a_textView){
-		if (a_textView==null) 
-			throw new NullPointerException("a_textView is null");
-		parseTemplate(a_textView);
-		convertBold(a_textView);
-		convertItalic(a_textView);
-		convertHeading(a_textView);
+	
+	private static TextView textView = null;
+	private static boolean isInit = false;
+	private static int lastFirstOccurence = 0;
+	private static List<Annotation> lastAnnotationList = null;
+	
+	public static void Init(TextView a_TextView) {
+		textView = a_TextView;
+		isInit = true;
+	
 	}
 	
-	private static void convertItalic(TextView a_textView) {
-		int first_occurence = a_textView.getText().indexOf("''");
-		if(first_occurence == -1) {
+	public static void convert(){
+		if(!isInit)
 			return;
-		}
 		
-		int second_occurence = a_textView.getText().indexOf("''",first_occurence + 2);
-		if(second_occurence == -1) {
-			return;
-		}
+		checkNoWiki(); //Check if there are no false annotations
+		findNoWiki(); // Check if there are new <nowiki> ... </nowiki> constructions
 		
-		int delta = second_occurence - first_occurence;
+		checkTemplates(); // Prevent templates from being edited
+		parseTemplate(); // Parse new templates
 		
-		if(delta <= 2) {
-			return;
-		}
+		checkLinks(); //Prevent links from being edited for now
+		parseLinks(); //Parse links AND images
 		
-		Range range = new Range(first_occurence + 2, second_occurence);
-		
-		String text = a_textView.getText(range);
-		
-		List<Annotation> list = a_textView.getAnnotations(range);
-		
-		range = new Range(first_occurence, second_occurence + 2);
-		
-		a_textView.delete(range);
-		
-		/*StyledText styledtext = new StyledText();
-		styledtext.addStyle(StyleType.BOLD);
-		styledtext.appendText(text);
-		
-		a_textView.insertStyledText(first_occurence, styledtext);*/
-		a_textView.insert(first_occurence, text);
-		a_textView.setAnnotation(new Range(first_occurence,first_occurence + text.length()), "style/fontStyle", "italic");
-		
-		if(list.size() > 0) {
-			for(int i = 0; i < list.size(); i++) {
-				Annotation annotation = list.get(i);
-				String name = annotation.getName();
-				String value = annotation.getValue();
-				
-				a_textView.setAnnotation(new Range(first_occurence,first_occurence + text.length()), name, value);
+		for(int i = 4; i != 0; i--) { //There are 4 levels of headings, find them all
+			String l_Identifier = "";
+			
+			for(int j = i; j != 0; j--)
+				l_Identifier += "=";
+			
+			replaceWikiText(l_Identifier,"styled-text","HEADING" + i);
+			
+			for(int j = 1; j != i; j++) {
+				l_Identifier.replaceFirst("=", "");
+				replaceWikiText(l_Identifier,"styled-text","HEADING" + i,"styled-text","HEADING" + j); // Just in case the bot edits before the user was done typing (We're as fast as lightning)
 			}
 		}
-	}
-	
-	private static void convertBold(TextView a_textView) {
-		String fulltext=a_textView.getText();
-		if (fulltext==null) 
-			throw new NullPointerException("fulltext == null");
-		int first_occurence = fulltext.indexOf("'''");
-		if(first_occurence == -1) {
-			return;
-		}
 		
-		int second_occurence = a_textView.getText().indexOf("'''",first_occurence + 3);
-		if(second_occurence == -1) {
-			return;
-		}
+		replaceWikiText("'''","style/fontWeight", "bold"); // Make stuff bold
+		replaceWikiText("''","style/fontStyle", "italic"); // Make stuff italic
+		replaceWikiText("'","style/fontWeight", "bold","style/fontStyle", "italic"); // Just in case the bot edits before the user was done typing (We're as fast as lightning)
 		
-		int delta = second_occurence - first_occurence;
-		
-		if(delta <= 3) {
-			return;
-		}
-		
-		Range range = new Range(first_occurence + 3, second_occurence);
-		
-		String text = a_textView.getText(range);
-		
-		List<Annotation> list = a_textView.getAnnotations(range);
-		
-		range = new Range(first_occurence, second_occurence + 3);
-		
-		a_textView.delete(range);
-		
-		/*StyledText styledtext = new StyledText();
-		styledtext.addStyle(StyleType.BOLD);
-		styledtext.appendText(text);
-		
-		a_textView.insertStyledText(first_occurence, styledtext);*/
-		a_textView.insert(first_occurence, text);
-		a_textView.setAnnotation(new Range(first_occurence,first_occurence + text.length()), "style/fontWeight", "bold");
-		
-		if(list.size() > 0) {
-			for(int i = 0; i < list.size(); i++) {
-				Annotation annotation = list.get(i);
-				String name = annotation.getName();
-				String value = annotation.getValue();
-				
-				a_textView.setAnnotation(new Range(first_occurence,first_occurence + text.length()), name, value);
-			}
-		}
-	}
-	
-	private static void convertHeading(TextView a_textView) {
-		int first_occurence = a_textView.getText().indexOf("==");
-		if(first_occurence == -1) {
-			return;
-		}
-		
-		int second_occurence = a_textView.getText().indexOf("==",first_occurence + 1);
-		if(second_occurence == -1) {
-			return;
-		}
-		
-		int delta = second_occurence - first_occurence;
-		
-		if(delta <= 2) {
-			return;
-		}
-		
-		Range range = new Range(first_occurence + 2, second_occurence);
-		
-		String text = a_textView.getText(range);
-		
-		range = new Range(first_occurence, second_occurence + 2);
-		
-		a_textView.delete(range);
-		
-		StyledText styledtext = new StyledText();
-		styledtext.addStyle(StyleType.HEADING1);
-		styledtext.appendText(text);
-		
-		a_textView.insertStyledText(first_occurence, styledtext);
-	}
-	
-	private static InputStream getXML(String a_GetVar) {
-		try{
-			URL url = new URL(Config.data("wiki")+"api.php?format=xml" + "&" + a_GetVar);
-	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-	        return connection.getInputStream();
-		}catch (IOException e) {
-			return null;
-		}
+		parseLists(); //Let's show lists with perfect indentation
 	}
 	
 	@SuppressWarnings("deprecation")
-	private static void parseTemplate(TextView a_textView) {
-		if (a_textView==null) 
-			throw new NullPointerException("a_textView is null");
-		int first_occurence = a_textView.getText().indexOf("{{");
-		if(first_occurence == -1) {
-			return;
-		}
-		
-		int second_occurence = a_textView.getText().indexOf("}}",first_occurence + 1);
-		if(second_occurence == -1) {
-			return;
-		}
-		
-		int delta = second_occurence - first_occurence;
-		
-		if(delta <= 0) {
-			return;
-		}
-		
-		Range range = new Range(first_occurence, second_occurence + 2);
-		
-		String text = a_textView.getText(range);
-		
-		range = new Range(first_occurence, second_occurence + 2);
-		
-		a_textView.delete(range);
+	private static void parseTemplate() {
+		String text = getText("{{","}}");
 		
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		DocumentBuilder db;
 		
 		try {
 			db = dbf.newDocumentBuilder();
-			InputStream stream = getXML("action=expandtemplates&text=" + URLEncoder.encode(text));
+			InputStream stream = XMLHandler.getXML("api.php?format=xml","action=expandtemplates&text=" + URLEncoder.encode("{{" + text + "}}"),false,false);
 			if(stream == null)
 				return;
 			
 			Document doc = db.parse(stream);
 			doc.getDocumentElement().normalize();
-			NodeList nodeLst = doc.getElementsByTagName("api");
+			NodeList node = doc.getElementsByTagName("api");
 			
-			Node fstNode = nodeLst.item(0);
-			Element fstElmnt = (Element) fstNode;
-			NodeList fstNmElmntLst = fstElmnt.getElementsByTagName("expandtemplates");
+			node = XMLHandler.getNode(node,"expandtemplates");
 			
-			Element fstNmElmnt = (Element) fstNmElmntLst.item(0);
-		    NodeList fstNm = fstNmElmnt.getChildNodes();
-		    String expandedTemplate = ((Node) fstNm.item(0)).getNodeValue();
+			String expandedTemplate = XMLHandler.getNodeContent(node);
 		    		    
-		    a_textView.insert(first_occurence, expandedTemplate);
-		    a_textView.setAnnotation(new Range(first_occurence,first_occurence + expandedTemplate.length()), "template", text);
+		    textView.insert(lastFirstOccurence, expandedTemplate);
+		    textView.setAnnotation(new Range(lastFirstOccurence,lastFirstOccurence + expandedTemplate.length()), "template", "{{" + text + "}}");
+		    textView.setAnnotation(new Range(lastFirstOccurence,lastFirstOccurence + expandedTemplate.length()), "template-parsed", expandedTemplate);
 		    
 		} catch (SAXException e) {
-			//textView.append("\nSAXException");
 		} catch (IOException e) {
-			//textView.append("\nIOException");
 		} catch (ParserConfigurationException e) {
-			//textView.append("\nParserConfigurationException");
+		} catch (NullPointerException e) {}
+	}
+	
+	private static void replaceWikiText(String a_Identifier, String a_AnnotationName, String a_AnnotationValue) {
+		replaceWikiText(a_Identifier, "", a_AnnotationName, a_AnnotationValue);
+	}
+	
+	private static void replaceWikiText(String a_Identifier, String a_PrependText, String a_AnnotationName, String a_AnnotationValue) {
+		String text = getText(a_Identifier);
+		textView.insert(lastFirstOccurence, a_PrependText + text);
+		textView.setAnnotation(new Range(lastFirstOccurence,lastFirstOccurence + text.length()), a_AnnotationName,a_AnnotationValue);
+		
+		if(lastAnnotationList != null && lastAnnotationList.size() > 0) {
+			for(int i = 0; i < lastAnnotationList.size(); i++) {
+				Annotation annotation = lastAnnotationList.get(i);
+				String name = annotation.getName();
+				String value = annotation.getValue();
+				
+				textView.setAnnotation(new Range(lastFirstOccurence,lastFirstOccurence + text.length()), name, value);
+			}
+		}
+	}
+	
+	private static void replaceWikiText(String a_Identifier, String a_AnnotationName, String a_AnnotationValue, String a_OldAnnotationName, String a_OldAnnotationValue) {
+		replaceWikiText(a_Identifier, "", a_AnnotationName, a_AnnotationValue, a_OldAnnotationName, a_OldAnnotationValue);
+	}
+	
+	private static void replaceWikiText(String a_Identifier, String a_PrependText, String a_AnnotationName, String a_AnnotationValue, String a_OldAnnotationName, String a_OldAnnotationValue) {
+		boolean doReplace = false;
+		String text = getText(a_Identifier);
+		textView.insert(lastFirstOccurence, text);
+		textView.setAnnotation(new Range(lastFirstOccurence,lastFirstOccurence + text.length()), a_AnnotationName,a_AnnotationValue);
+		
+		if(lastAnnotationList != null && lastAnnotationList.size() > 0) {
+			for(int i = 0; i < lastAnnotationList.size(); i++) {
+				Annotation annotation = lastAnnotationList.get(i);
+				String name = annotation.getName();
+				String value = annotation.getValue();
+				
+				if(a_OldAnnotationName.equals(name) && a_OldAnnotationValue.equals(value))
+					doReplace = true;
+				
+				textView.setAnnotation(new Range(lastFirstOccurence,lastFirstOccurence + text.length()), name, value);
+			}
 		}
 		
-		return;
+		if(!doReplace) {
+			if(text.length() == 0)
+				return;
+			
+			textView.delete(new Range(lastFirstOccurence,lastFirstOccurence + text.length()));
+			textView.insert(lastFirstOccurence, a_Identifier + text + a_Identifier);
+			
+			if(lastAnnotationList != null && lastAnnotationList.size() > 0) {
+				for(int i = 0; i < lastAnnotationList.size(); i++) {
+					Annotation annotation = lastAnnotationList.get(i);
+					String name = annotation.getName();
+					String value = annotation.getValue();
+					
+					if(a_OldAnnotationName.equals(name) && a_OldAnnotationValue.equals(value))
+						doReplace = true;
+					
+					textView.setAnnotation(new Range(lastFirstOccurence,lastFirstOccurence + text.length() + (a_Identifier.length() * 2)), name, value);
+				}
+			}
+		}
+	}
+	
+	private static String getText(String a_Identifier) {
+		return getText(a_Identifier,a_Identifier);
+	}
+	
+	private static int findOccurence(String text) {
+		return findOccurence(text,0);
+	}
+	
+	private static int findOccurence(String text, int start) {
+		int occurence = textView.getText().indexOf(text,start);
+		
+		if(occurence == -1)
+			return -1;
+		
+		List<Annotation> tempList = textView.getAnnotations(new Range(occurence, occurence + 1));
+		if(tempList.size() > 0) {
+			for(int i = 0; i < tempList.size(); i++) {
+				Annotation annotation = tempList.get(i);
+				String name = annotation.getName();
+				String value = annotation.getValue();
+				
+				if(name.equals("wikitext") || value.equals("nowiki"))
+					occurence = findOccurence(text,occurence + 1);
+			}
+		}
+		
+		return occurence;
+	}
+		
+	private static String getText(String a_BeginIdentifier, String a_EndIdentifier) {
+		int first_occurence = findOccurence(a_BeginIdentifier);
+		if(first_occurence == -1) {
+			return "";
+		}
+		
+		int second_occurence = findOccurence(a_EndIdentifier,first_occurence + a_BeginIdentifier.length());
+		if(second_occurence == -1) {
+			return "";
+		}
+		
+		int delta = second_occurence - first_occurence;
+		
+		if(delta <= a_BeginIdentifier.length()) {
+			return "";
+		}
+		
+		Range range = new Range(first_occurence + a_BeginIdentifier.length(), second_occurence);
+		
+		String text = textView.getText(range);
+		
+		lastAnnotationList = textView.getAnnotations(range);
+		
+		range = new Range(first_occurence, second_occurence + a_EndIdentifier.length());
+		
+		textView.delete(range);
+		lastFirstOccurence = first_occurence;
+		return text;
+	}
+	
+	private static void findNoWiki() {
+		String text = getText("<nowiki>","</nowiki>");
+		if(text.equals(""))
+			return;
+		
+		textView.insert(lastFirstOccurence, "<nowiki>" + text + "</nowiki>");
+		textView.setAnnotation(new Range(lastFirstOccurence,lastFirstOccurence + text.length()), "wikitext","nowiki");
+		
+		WikitextConverter.convert(textView,lastAnnotationList);
+	}
+	
+	private static void checkNoWiki() {
+		List<Annotation> tempList = textView.getAnnotations();
+		
+		if(tempList.size() > 0) {
+			for(int i = 0; i < tempList.size(); i++) {
+				Annotation annotation = tempList.get(i);
+				String name = annotation.getName();
+				String value = annotation.getValue();
+				
+				if(name.equals("wikitext") || value.equals("nowiki")) {
+					String content = textView.getText(annotation.getRange());
+					if(!content.startsWith("<nowiki>") || !content.endsWith("</nowiki>")) {
+						textView.deleteAnnotations(annotation.getRange());
+					}
+				}
+			}
+		}
+	}
+	
+	private static void checkTemplates() {
+		List<Annotation> tempList = textView.getAnnotations();
+		
+		if(tempList.size() > 0) {
+			for(int i = 0; i < tempList.size(); i++) {
+				Annotation annotation = tempList.get(i);
+				String name = annotation.getName();
+				String value = annotation.getValue();
+				
+				if(name.equals("template-parsed")) {
+					if(!WikitextConverter.convert(textView,textView.getAnnotations(annotation.getRange())).equals(value)) {
+						textView.replace(annotation.getRange(), value);
+					}
+				}
+			}
+		}
+	}
+
+	private static void parseLists() {
+		List<Annotation> tempList = textView.getStyles();
+		fixindentiaton(tempList); // First fix the indentation of old lists
+		replaceWikiText("\n*","\n","styled-text","BULLETED"); // Lets get lists
+		tempList = textView.getStyles();
+		fixindentiaton(tempList); // Fix the indentiaton of new lists
+		
+	}
+	
+	private static void fixindentiaton(List<Annotation> tempList) {
+		if(tempList.size() > 0) {
+			for(int i = 0; i < tempList.size(); i++) {
+				Annotation annotation = tempList.get(i);
+				String value = annotation.getValue();
+				if(value.equals("BULLETED")) {
+					Range range = annotation.getRange();
+					String text = textView.getText();
+					
+					int start = 0;
+					int end = text.indexOf("\n",start);
+					while(end != -1) {
+						if(start == end) {
+							start++;
+							continue;
+						}
+						Range curRange = new Range(start + range.getStart() ,end + range.getStart());
+						List<Annotation> otherList = textView.getStyles(curRange);
+						
+						int currentIndentiaton = 0;
+						for(int j = 0; j < otherList.size(); j++) {
+							Annotation otherAnnotation = otherList.get(i);
+							String otherValue = otherAnnotation.getValue();
+							for(int k = 1; k <= 3; k++) {
+								if(otherValue.equals("INDENT" + k))
+									currentIndentiaton = k;
+							}
+						}
+						
+						int originalindentiaton = currentIndentiaton;
+						
+						String curText = textView.getText(curRange);
+						while(curText.startsWith("*") && currentIndentiaton < 4) {
+							currentIndentiaton++;
+							curText = curText.substring(1);
+						}
+						
+						if(originalindentiaton != currentIndentiaton) {
+							otherList = textView.getAnnotations(curRange);
+							textView.deleteAnnotations(curRange);
+							if(otherList.size() > 0) {
+								for(int j = 0; j < otherList.size(); j++) {
+									Annotation otherAnnotation = otherList.get(j);
+									String otherName = otherAnnotation.getName();
+									String otherValue = otherAnnotation.getValue();
+									
+									if(!otherName.equals("styled-text") && !otherValue.startsWith("INDENT"))
+										textView.setAnnotation(curRange, otherName, otherValue);
+								}
+							}
+							textView.setAnnotation(curRange, "styled-text", "INDENT" + currentIndentiaton);
+							
+							textView.replace(curRange, curText);
+						}
+						start = end;
+						end = text.indexOf("\n",start);
+					}
+				}
+			}
+		}
+	}
+
+	@SuppressWarnings("deprecation")
+	private static void parseLinks(){
+		String text = getText("{{","}}");
+		
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		DocumentBuilder db;
+		
+		try {
+			db = dbf.newDocumentBuilder();
+			InputStream stream = XMLHandler.getXML("api.php?format=xml","action=parse&text=" + URLEncoder.encode("[[" + text + "]]"),false,false);
+			if(stream == null)
+				return;
+			
+			Document doc = db.parse(stream);
+			doc.getDocumentElement().normalize();
+			NodeList node = doc.getElementsByTagName("api");
+			node = XMLHandler.getNode(node,"parse");
+			
+			node = XMLHandler.getNode(node,"text");
+			
+			String parsedLink = XMLHandler.getNodeContent(node);
+			
+			int occurence = parsedLink.indexOf("<p>");
+			if(occurence != -1)
+				parsedLink = parsedLink.substring(occurence);
+			
+			occurence = parsedLink.indexOf("</p>");
+				if(occurence != -1)
+					parsedLink = parsedLink.substring(0,occurence);
+		    		    
+			parsedLink.replace("href=\"/", "href=\""+ XMLHandler.getURL() +"/");
+				
+		    textView.insert(lastFirstOccurence, parsedLink);
+		    textView.setAnnotation(new Range(lastFirstOccurence,lastFirstOccurence + parsedLink.length()), "link", "[[" + text + "]]");
+		    textView.setAnnotation(new Range(lastFirstOccurence,lastFirstOccurence + parsedLink.length()), "link-parsed", parsedLink);
+		    
+		} catch (SAXException e) {
+		} catch (IOException e) {
+		} catch (ParserConfigurationException e) {
+		} catch (NullPointerException e) {}
+	}
+	
+	private static void checkLinks() {
+		List<Annotation> tempList = textView.getAnnotations();
+		
+		if(tempList.size() > 0) {
+			for(int i = 0; i < tempList.size(); i++) {
+				Annotation annotation = tempList.get(i);
+				String name = annotation.getName();
+				String value = annotation.getValue();
+				
+				if(name.equals("link-parsed")) {
+					if(!WikitextConverter.convert(textView,textView.getAnnotations(annotation.getRange())).equals(value)) {
+						textView.replace(annotation.getRange(), value);
+					}
+				}
+			}
+		}
 	}
 }
