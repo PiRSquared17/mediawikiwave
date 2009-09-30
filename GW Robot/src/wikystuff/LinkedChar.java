@@ -5,7 +5,7 @@
  * a->b->c->d->(end/null).
  */
 class LinkedChar {
-	public char character=null;//FIX ME - Char can't be null
+	public char character='\u0000';
 	public int position=-1;
 	private LinkedChar nextLinkedChar=null;
 
@@ -25,7 +25,8 @@ class LinkedChar {
 	/** insert a new LinkedChar after this one.
 	 * a->b ; a.insertAfter(foo); a->foo->b */
 	public void insertAfter(LinkedChar newChar) {
-		newChar.insertAfter(this.nextLinkedChar);
+		if (newChar!=null)
+			newChar.insertAfter(this.nextLinkedChar);
 		this.nextLinkedChar=newChar;
 	}
 
@@ -43,12 +44,20 @@ class LinkedChar {
 	/** create a new Linked List from a string,
 	 * returns the first element in the list */
 	public static LinkedChar buildList(String s) {
-		
+		System.out.println(s);		
+
 		LinkedChar list=new LinkedChar(s.charAt(0),0);
+		LinkedChar current=list;
 		for (int i=1;i<s.length();i++) {
-			list.insertAfter(s.charAt(i), i); //FIX ME - function with these parameters doesn't excist
+			LinkedChar c=new LinkedChar(s.charAt(i),i);
+			current.insertAfter(c);
+			current=c;
 		}
 		return list;
+	}
+	
+	public String toString() {
+		return "LinkedChar('"+this.character+"',"+this.position+")";
 	}
 
 }
