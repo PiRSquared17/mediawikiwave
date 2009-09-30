@@ -24,11 +24,11 @@ public class WaveToWikitextConverter {
 		replace(list, "styled-text","BULLETED","*","\n",true);
 	
 		
-		m_TextView.replace(list.toString());	
 		replaceSpecial("wiki/InternalLink");
 		replaceSpecial("wiki/ExternalLink");
 		replaceSpecial("wiki/Template");
 		
+		m_TextView.replace(list.toString());	
 		
 		return m_TextView.getText();
 	}
