@@ -9,13 +9,11 @@ import java.io.InputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 public class Config {
 	/* implement simple singleton */
@@ -37,7 +35,7 @@ public class Config {
 	
 	private void readFile() throws Exception {
 		try {
-			File file=new File(this.config_file);
+			File file=new File(Config.config_file);
 			InputStream stream = new FileInputStream(file);
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 			DocumentBuilder db;
@@ -59,7 +57,7 @@ public class Config {
 					this.config_data.put(key, value);
 				}
 			}
-		} catch (Exception cause) { throw new Exception("Failed to parse config file "+this.config_file, cause);}
+		} catch (Exception cause) { throw new Exception("Failed to parse config file "+Config.config_file, cause);}
 	}
 
 	public String get(String key) {
@@ -69,7 +67,7 @@ public class Config {
 	public static String data(String key) {
 		try {
 			Config instance=Config.getInstance();
+			return instance.get(key);
 		} catch (Exception cause) {throw new RuntimeException("Failed to instantiate Config",cause);}
-		return instance.get(key);
 	}
 }
