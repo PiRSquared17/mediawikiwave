@@ -76,7 +76,7 @@ public class MediawikiBot {
 			db = dbf.newDocumentBuilder();
 			String postVars = "action=query&prop=info&intoken=edit&titles="+Config.data("xmlfrom");
 			log.info("Post vars in MediawikiBot.getEditToken() are " + postVars);
-			InputStream stream = XMLHandler.getXML("api.php?result=xml",postVars,false,true);
+			InputStream stream = XMLHandler.getXML("api.php?format=xml",postVars,false,true);
 			if(stream == null){
 				log.severe("No stream available in Mediawikibot.login()");
 				return "";
@@ -92,7 +92,7 @@ public class MediawikiBot {
 			
 			edittoken = XMLHandler.getNodeAttribute(node, "edittoken");
 			log.info("edittoken = "+edittoken);
-
+			return edittoken;
 		} catch (SAXException e) {
 			log.severe("SAXException in getEditToken().\n Info: " + e.getMessage());
 		} catch (IOException e) {
