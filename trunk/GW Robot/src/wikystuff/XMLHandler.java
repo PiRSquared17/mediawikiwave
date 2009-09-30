@@ -38,13 +38,14 @@ public class XMLHandler {
 		try{
 			String l_Url = m_URL + a_Page;
 			if(!a_Var.equals("") && !isPost)
-				m_URL += "&" + a_Var;
+				l_Url += "&" + a_Var;
 			
 			log.info("URL: " + l_Url);
+			
 			URL url = new URL(l_Url);
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 			if(useCookie) {
-				String cookieString = cookieprefix + "UserID=" + lguserid + "; " + cookieprefix + "UserName=" + lgusername + "; " + cookieprefix + "_session=" + lgsessionid;
+				String cookieString = cookieprefix + "UserID=" + lguserid + ";" + cookieprefix + "UserName=" + lgusername + ";" + cookieprefix + "_session=" + lgsessionid;
 				log.info("Cookie string: " + cookieString);
 				connection.setRequestProperty("Cookie",cookieString);
 			}
