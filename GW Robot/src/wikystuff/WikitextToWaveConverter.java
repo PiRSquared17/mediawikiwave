@@ -1,5 +1,14 @@
 package wikystuff;
 
+import java.io.InputStream;
+import java.net.URLEncoder;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+
 import com.google.wave.api.Range;
 import com.google.wave.api.TextView;
 
@@ -13,6 +22,14 @@ public class WikitextToWaveConverter {
 		while(doReplace) {
 			doReplace = replace("'''","style/fontWeight","bold");
 			doReplace |= replace("''","style/fontStyle","italic");
+			doReplace |= replace("====","styled-text","HEADING4");
+			doReplace |= replace("===","styled-text","HEADING3");
+			doReplace |= replace("==","styled-text","HEADING2");
+			doReplace |= replace("=","styled-text","HEADING1");
+			doReplace |= replace("*","\n","styled-text","BULLETED");
+			doReplace |= replaceParsed("[[", "]]", "wiki/InternalLink");
+			doReplace |= replaceParsed("[", "]", "wiki/ExternalLink");
+			doReplace |= replaceParsed("{{", "}}", "wiki/Template");
 		}
 		
 		return m_TextView.getText();
@@ -45,6 +62,50 @@ public class WikitextToWaveConverter {
 		//Apply Annotation
 		m_TextView.setAnnotation(new Range(l_StartPos,l_EndPos - a_PreTag.length() - a_PostTag.length()), a_AnnotationName, a_AnnotationValue);
 		return true;
+	}
+	
+	@SuppressWarnings("deprecation")
+	private boolean replaceParsed(String a_PreTag, String a_PostTag, String a_AnnotationName) {
+		int l_StartPos = m_TextView.getText().indexOf(a_PreTag);
+		if(l_StartPos == -1) //Pre tag not found
+			return false;
+		
+		//Search for endtag
+		int l_EndPos = m_TextView.getText().indexOf(a_PostTag, l_StartPos + a_PreTag.length());
+		if(l_EndPos == -1)
+			return false;
+		
+		l_EndPos += a_PostTag.length();
+		
+		//Get text
+		String l_Text = m_TextView.getText(new Range(l_StartPos, l_EndPos));
+		
+		//Remove tags
+		m_TextView.delete(new Range(l_StartPos,l_EndPos));
+		
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		DocumentBuilder db;
+		
+		try {
+			db = dbf.newDocumentBuilder();
+			InputStream stream = XMLHandler.getXML("api.php?format=xml","action=parse&text=" + URLEncoder.encode(l_Text),false,false);
+			if(stream == null)
+				return false;
+			
+			Document doc = db.parse(stream);
+			doc.getDocumentElement().normalize();
+			NodeList node = doc.getElementsByTagName("api");
+			
+			node = XMLHandler.getNode(node,"parse");
+			node = XMLHandler.getNode(node,"text");
+			
+			String result = XMLHandler.getNodeContent(node);
+			m_TextView.insert(l_StartPos, result);
+			
+			//Apply Annotation
+			m_TextView.setAnnotation(new Range(l_StartPos,l_StartPos + result.length()), a_AnnotationName, l_Text);
+			return true;
+		} catch (Exception e){ return false;}
 	}
 	
 	//only a pre-tag

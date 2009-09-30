@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.logging.Logger;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -18,6 +19,8 @@ public class XMLHandler {
 	static private String lguserid = "";
 	static private String lgsessionid = "";
 	static private String cookieprefix = "";
+	
+	static private Logger log = Logger.getLogger(XMLHandler.class.getName());
 	
 	static private boolean isInit = false;
 	
@@ -37,17 +40,21 @@ public class XMLHandler {
 			if(!a_Var.equals("") && !isPost)
 				m_URL += "&" + a_Var;
 			
+			log.info("URL: " + l_Url);
 			URL url = new URL(l_Url);
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 			if(useCookie) {
-				connection.setRequestProperty("Cookie",cookieprefix + "UserID=" + lguserid + "; " + cookieprefix + "UserName=" + lgusername + "; " + cookieprefix + "_session=" + lgsessionid);
+				String cookieString = cookieprefix + "UserID=" + lguserid + "; " + cookieprefix + "UserName=" + lgusername + "; " + cookieprefix + "_session=" + lgsessionid;
+				log.info("Cookie string: " + cookieString);
+				connection.setRequestProperty("Cookie",cookieString);
 			}
-	        //connection.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
+	        connection.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
 	        connection.setDoOutput(true);
 	        if(isPost) {
 		        connection.setRequestMethod("POST");
 		        
 		        OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
+		        log.info("Sending POST var: " + a_Var);
 		        writer.write(a_Var);
 		        writer.close();
 	        }
