@@ -42,9 +42,7 @@ class LinkMapChar {
 	/** insert additional unmarked (no position data) String at
 	 position p in this data structure */
 	public void insertUnmarkedAt(int position, String s) {
-		System.out.println(map.toString());
 		LinkedChar location=map.get(new Integer(position));
-		System.out.println(location);
 		location.insertUnmarked(s);
 	}
 }
