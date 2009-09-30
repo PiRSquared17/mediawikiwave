@@ -24,7 +24,7 @@ public class WikyStuffServlet extends AbstractRobotServlet {
 		
 		for (Event e: bundle.getEvents()) {
 			if(e.getType() == EventType.WAVELET_SELF_ADDED) {
-				addForm(wavelet.getRootBlip());
+				addForm(wavelet.appendBlip());
 			}
 
 			if(e.getType() == EventType.BLIP_SUBMITTED || e.getType() == EventType.BLIP_VERSION_CHANGED || e.getType() == EventType.WAVELET_VERSION_CHANGED) {

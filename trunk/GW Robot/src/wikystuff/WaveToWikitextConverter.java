@@ -12,14 +12,19 @@ public class WaveToWikitextConverter {
 	public String convert(TextView a_TextView) {
 		m_TextView = a_TextView;
 		
-		replace("style/fontWeight","bold","'''",true);
-		replace("style/fontStyle","italic","''",true);
-		replace("styled-text","HEADING4","====",false);
-		replace("styled-text","HEADING3","===",false);
-		replace("styled-text","HEADING2","==",false);
-		replace("styled-text","HEADING1","=",false);
-		replace("styled-text","BULLETED","*","\n",true);
 		
+		LinkMapChar list=new LinkedMapChar(m_TextView.getText());
+
+		replace(list, "style/fontWeight","bold","'''",true);
+		replace(list, "style/fontStyle","italic","''",true);
+		replace(list, "styled-text","HEADING4","====",false);
+		replace(list, "styled-text","HEADING3","===",false);
+		replace(list, "styled-text","HEADING2","==",false);
+		replace(list, "styled-text","HEADING1","=",false);
+		replace(list, "styled-text","BULLETED","*","\n",true);
+	
+		
+		m_TextView.replace(list.toString());	
 		replaceSpecial("wiki/InternalLink");
 		replaceSpecial("wiki/ExternalLink");
 		replaceSpecial("wiki/Template");
@@ -34,6 +39,7 @@ public class WaveToWikitextConverter {
 	}
 	
 	//pre- and post-tag differ
+	/*
 	private void replace(String a_AnnotationName, String a_AnnotationValue,String a_PreTag, String a_PostTag, boolean a_RemoveAnnotations){
 		List<Annotation> l_AnnotationList = m_TextView.getAnnotations(a_AnnotationName);
 		for(int i = 0; i < l_AnnotationList.size(); i++) {
@@ -46,7 +52,25 @@ public class WaveToWikitextConverter {
 		if(a_RemoveAnnotations)
 			m_TextView.deleteAnnotations(a_AnnotationName);
 	}
+	*/
+
+
 	
+
+
+	private void replace(LinkedChar list,String a_AnnotationName, String a_AnnotationValue,String a_PreTag, String a_PostTag, boolean a_RemoveAnnotations){
+				
+			
+		List<Annotation> l_AnnotationList = m_TextView.getAnnotations(a_AnnotationName);
+		for(int i = 0; i < l_AnnotationList.size(); i++) {
+			Annotation l_Annotation = l_AnnotationList.get(i);
+			if(l_Annotation.getValue().compareTo(a_AnnotationValue) == 0) {
+				list.insertUnmarkedAt(l_Annotation.getRange().getEnd(), a_PostTag);
+				list.insertUnmarkedAt(l_Annotation.getRange().getStart(), a_PreTag);
+			}
+		}
+	}	
+
 	private void replaceSpecial(String a_AnnotationName) {
 		List<Annotation> l_AnnotationList = m_TextView.getAnnotations(a_AnnotationName);
 		for(int i = 0; i < l_AnnotationList.size(); i++) {
