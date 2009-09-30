@@ -11,18 +11,20 @@ import java.util.HashMap;
  */
 
 class LinkMapChar {
-	private LinkedChar list=null;
-	private HashMap<int[],LinkedChar> map=new HashMap<int[],LinkedChar>();
+	private LinkedChar list;
+	private HashMap<Integer,LinkedChar> map;
 	
 	/** creates a new data structure from string*/
 	public LinkMapChar(String s) {
 		this.list=LinkedChar.buildList(s);
+		this.map=new HashMap<Integer,LinkedChar>();
 
 		LinkedChar currentChar=this.list;
 		while (currentChar.hasMoreChars()) {
-			map.put(currentChar.position,currentChar); //FIX ME - Need key
+			map.put(new Integer(currentChar.position),currentChar);
 			currentChar=currentChar.getNextLinkedChar();
 		}
+		map.put(new Integer(currentChar.position),currentChar);
 	}
 			
 	/** Returns the string representation of this structure */		
@@ -33,14 +35,16 @@ class LinkMapChar {
 			s=s.append(currentChar.character);
 			currentChar=currentChar.getNextLinkedChar();
 		}
+		s=s.append(currentChar.character);
 		return s.toString();
 	}	
 
 	/** insert additional unmarked (no position data) String at
-	 position p in this data structure 
-	 * @return */
+	 position p in this data structure */
 	public void insertUnmarkedAt(int position, String s) {
-		LinkedChar location=map.get(position);
+		System.out.println(map.toString());
+		LinkedChar location=map.get(new Integer(position));
+		System.out.println(location);
 		location.insertUnmarked(s);
 	}
 }
