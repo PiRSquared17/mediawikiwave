@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <settings>
 	<xmlfrom>User:Admin</xmlfrom><!-- possibly redundant with user below -->
-	<wiki>http://tm-lansupport.nl/w/</wiki><!--the wiki we are editing on-->
+	<wiki>http://bruning.xs4all.nl:8081/~kim/revisions/wave/</wiki><!--the wiki we are editing on-->
 	<user>Admin</user><!-- the username the bot is to use on-wiki -->
 	<password>admin1234</password>
 </settings>

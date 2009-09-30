@@ -1,7 +1,5 @@
 package wikystuff;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
 import java.util.logging.Logger;
 import com.google.wave.api.*;
@@ -9,24 +7,30 @@ import com.google.wave.api.*;
 @SuppressWarnings("serial")
 public class WikyStuffServlet extends AbstractRobotServlet {
 	
-	private boolean debug=true;
-	private boolean isInit = false;
-	
-	public void WikystuffServlet() {
-		debug = false;
+	private boolean debug = true;
+	private boolean isWikiText = false;
+	private Logger log;
+
+	public WikyStuffServlet() {
+		this.log=Logger.getLogger(WikyStuffServlet.class.getName());
 	}
 	
-	public void processEvents(RobotMessageBundle bundle) {		
+	public void processEvents(RobotMessageBundle bundle) {
+		long startTime = System.currentTimeMillis();
+		WaveToWikitextConverter toWikitextConverter = new WaveToWikitextConverter();
+		this.log.info("Event Received!");
+		
 		Wavelet wavelet = bundle.getWavelet();
 		
 		for (Event e: bundle.getEvents()) {
+			if(e.getType() == EventType.WAVELET_SELF_ADDED) {
+				addForm(wavelet.getRootBlip());
+			}
+
 			if(e.getType() == EventType.BLIP_SUBMITTED || e.getType() == EventType.BLIP_VERSION_CHANGED || e.getType() == EventType.WAVELET_VERSION_CHANGED) {
 				Blip blip = wavelet.appendBlip();
 				TextView textView = blip.getDocument();
 				
-				
-				Logger log = Logger.getLogger(MediawikiBot.class.getName());
-
 				MediawikiBot bot = new MediawikiBot(Config.data("wiki"),textView);
 				bot.login(Config.data("user"), Config.data("password"));
 				bot.getEditToken();
@@ -39,7 +43,10 @@ public class WikyStuffServlet extends AbstractRobotServlet {
 				}
 
 				/* Get document text and page title */
-				String text=wavelet.getRootBlip().getDocument().getText();
+				TextView rootTextView=safeTextView(wavelet.getRootBlip());
+				if (rootTextView==null)
+					continue;
+				String text=rootTextView.getText();
 				String[] lines=text.split("\n");
 
 				String pageTitle = wavelet.getTitle(); 
@@ -56,7 +63,13 @@ public class WikyStuffServlet extends AbstractRobotServlet {
 				
 				/* And submit to wiki. */
 				if (!pageTitle.equals("")) {
-					bot.CreatePage(pageTitle , "", WikitextConverter.convert(wavelet.getRootBlip().getDocument()),wavelet.getWaveId(), summary);
+					String finalText = "";
+					if(isWikiText) {
+						finalText = wavelet.getRootBlip().getDocument().getText();
+					} else {
+						finalText = toWikitextConverter.convert(wavelet.getRootBlip().getDocument());
+					}
+					bot.CreatePage(pageTitle , "", finalText,wavelet.getWaveId(), summary);
 				} else {
 					textView.append("Couldn't figure a title, so sorry, no upload.\n");
 				}
@@ -67,31 +80,80 @@ public class WikyStuffServlet extends AbstractRobotServlet {
 					} catch (NullPointerException e2){}
 				}
 			}
+			
+			if(e.getType() == EventType.FORM_BUTTON_CLICKED) {
+				TextView rootTextView=safeTextView(wavelet.getRootBlip());
+				if (rootTextView!=null) {
+					if(!isWikiText) {
+						toWikitextConverter.convert(rootTextView);
+					} else {
+						WikitextToWaveConverter toWaveConverter = new WikitextToWaveConverter();
+						toWaveConverter.convert(rootTextView);
+					}
+					//rootTextView.append("\n\nHello World");
+					isWikiText = !isWikiText;
+					
+				}
+			}
 		}
 
-		Blip rootBlip=wavelet.getRootBlip();
 		
-		if(!isInit) {
-			TextView rootTextView=rootBlip.getDocument();
-			WikitextToWaveConverter.Init(rootTextView);
-			isInit = true;
+		long endTime = System.currentTimeMillis();
+		long executionTime = endTime - startTime;
+		
+		this.log.info("Time spent: " + executionTime + "ms");
+	}
+	
+	public void addForm(Blip blip) {
+		TextView textView=safeTextView(blip);
+		this.log("Adding form?\n");
+		if (textView!=null) {
+			this.log("Adding form!\n");
+			FormElement button=new FormElement(ElementType.BUTTON,"WYSIorWIKI");
+			button.setLabel("switch");
+			button.setValue("Switch");
+			textView.appendElement(button);
+
 		}
 		
-		// Workaround.  BlipImpl.isDocumentAvailable can break with a NullPointerException if data is not initialized for some reason.
-		// (see issue 200 - http://code.google.com/p/google-wave-resources/issues/detail?id=200&start=100 )
-		// documentAvailable is true if rootBlip.isDocumentAvailable is true. false in all other cases
+		/*
+		textView.addElement(new FormElement(ElementType.RADIO_BUTTON_GROUP, "WYSIorWIKI"));
+		
+		wysi=new FormElement(ElementType.RADIO_BUTTON,"WYSIorWIKI");
+		wysi.addLabel("WYSIWYG");
+		textView.addElement(wysi);		
+
+		wiki=new FormElement(ElementType.RADIO_BUTTON,"WYSIorWIKI");
+		wiki.addLabel("WikiText");
+		textView.addElement(wiki);	
+		*/
+
+	}
+
+
+	/** Workaround.  BlipImpl.isDocumentAvailable can break with a NullPointerException if data is not initialized for some reason.
+	// (see issue 200 - http://code.google.com/p/google-wave-resources/issues/detail?id=200&start=100 )
+	 documentAvailable is true if rootBlip.isDocumentAvailable is true. false in all other cases.
+	UTILITY*/
+	public static TextView safeTextView(Blip blip) {
 		boolean documentAvailable=false;
+		TextView textView=null;
 		try {
-			documentAvailable=rootBlip.isDocumentAvailable();
+			documentAvailable=blip.isDocumentAvailable();
 		} catch (NullPointerException ignored)  {}
 
 		if (documentAvailable) {
-			WikitextToWaveConverter.convert();
+			textView=blip.getDocument();
+			
 		}
+		return textView;
 	}
 	
+	
 	/** given an array of String-s, concatenate all the strings
-	 * (perl, php and python call this a "join", the opposite of split) */
+	 * (perl, php and python call this a "join", the opposite of split). 
+	UTILITY.
+	*/
 	public static String join(String[] lines, int firstIndex) {
 		String total="";
 		for (int i=firstIndex; i<lines.length;i++) {
@@ -101,4 +163,6 @@ public class WikyStuffServlet extends AbstractRobotServlet {
 		}
 		return total;
 	}
+	
+	
 }
