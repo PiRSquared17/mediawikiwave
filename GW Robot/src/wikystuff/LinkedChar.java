@@ -1,4 +1,4 @@
-package wikystuff;
+//package wikystuff;
 
 /** represents a single character in a Linked List.
  * a null link terminates the list.

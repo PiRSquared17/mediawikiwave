@@ -13,7 +13,7 @@ public class WaveToWikitextConverter {
 		m_TextView = a_TextView;
 		
 		
-		LinkMapChar list=new LinkedMapChar(m_TextView.getText());
+		LinkMapChar list=new LinkMapChar(m_TextView.getText());
 
 		replace(list, "style/fontWeight","bold","'''",true);
 		replace(list, "style/fontStyle","italic","''",true);
@@ -58,7 +58,7 @@ public class WaveToWikitextConverter {
 	
 
 
-	private void replace(LinkedChar list,String a_AnnotationName, String a_AnnotationValue,String a_PreTag, String a_PostTag, boolean a_RemoveAnnotations){
+	private void replace(LinkedMapChar list,String a_AnnotationName, String a_AnnotationValue,String a_PreTag, String a_PostTag, boolean a_RemoveAnnotations){
 				
 			
 		List<Annotation> l_AnnotationList = m_TextView.getAnnotations(a_AnnotationName);
