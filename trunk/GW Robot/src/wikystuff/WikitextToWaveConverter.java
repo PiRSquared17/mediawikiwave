@@ -1,7 +1,9 @@
 package wikystuff;
 
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -14,6 +16,7 @@ import com.google.wave.api.TextView;
 
 public class WikitextToWaveConverter {
 	private TextView m_TextView;
+	private Logger log = Logger.getLogger(WikitextToWaveConverter.class.getName());
 	
 	public String convert(TextView a_TextView) {
 		m_TextView = a_TextView;
@@ -88,9 +91,13 @@ public class WikitextToWaveConverter {
 		
 		try {
 			db = dbf.newDocumentBuilder();
-			InputStream stream = XMLHandler.getXML("api.php?format=xml","action=parse&text=" + URLEncoder.encode(l_Text),false,false);
-			if(stream == null)
+			String getVar = "action=parse&text=" + URLEncoder.encode(l_Text);
+			InputStream stream = XMLHandler.getXML("api.php?format=xml",getVar,false,false);
+			log.info("Getvar: " + getVar);
+			if(stream == null) {
+				log.severe("No stream!");
 				return false;
+			}
 			
 			Document doc = db.parse(stream);
 			doc.getDocumentElement().normalize();
@@ -99,11 +106,13 @@ public class WikitextToWaveConverter {
 			node = XMLHandler.getNode(node,"parse");
 			node = XMLHandler.getNode(node,"text");
 			
-			String result = XMLHandler.getNodeContent(node);
-			m_TextView.insert(l_StartPos, result);
+			String result = URLDecoder.decode(XMLHandler.getNodeContent(node));
+			log.info("result: " + result);
+			log.info("Start pos:" + l_StartPos);
+			m_TextView.appendMarkup(result);
 			
 			//Apply Annotation
-			m_TextView.setAnnotation(new Range(l_StartPos,l_StartPos + result.length()), a_AnnotationName, l_Text);
+			//m_TextView.setAnnotation(new Range(l_StartPos,l_StartPos + result.length()), a_AnnotationName, l_Text);
 			return true;
 		} catch (Exception e){ return false;}
 	}
