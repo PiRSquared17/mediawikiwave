@@ -32,8 +32,14 @@ public class WikyStuffServlet extends AbstractRobotServlet {
 				TextView textView = blip.getDocument();
 				
 				MediawikiBot bot = new MediawikiBot(Config.data("wiki"),textView);
-				bot.login(Config.data("user"), Config.data("password"));
-				bot.getEditToken();
+				if(!bot.login(Config.data("user"), Config.data("password"))) {
+					log.severe("Login error!");
+					return;
+				}
+				if(bot.getEditToken().compareTo("") == 0) {
+					log.severe("No edit token retrieved!");
+					return;
+				}
 
 				/* Create an edit summary crediting all participants */
 				List<String> participants=wavelet.getParticipants();

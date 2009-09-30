@@ -4,9 +4,6 @@ import com.google.wave.api.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.logging.Logger;
 
@@ -15,27 +12,24 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public class MediawikiBot {
-	private String m_URL;
 	private String a_URL;
 	private TextView textView;
-	private String lgusername;
-	private String lguserid;
-	private String lgsessionid;
+	
 	private String edittoken;
-	private String cookieprefix;
+	
+	Logger log = Logger.getLogger(MediawikiBot.class.getName());
 	
 	public MediawikiBot (String a_URL, TextView a_TextView) {
 		if(!a_URL.endsWith("/"))
 			a_URL += "/";
-		m_URL = a_URL + "api.php?format=xml";
+		
+		XMLHandler.Init(a_URL);
 		textView = a_TextView;
-		this.a_URL=a_URL;
 	}
 	
 	public String getURL() { return a_URL; }
@@ -46,126 +40,65 @@ public class MediawikiBot {
 		
 		try {
 			db = dbf.newDocumentBuilder();
-			InputStream stream = getPostXML("action=login&lgname=" + a_Username + "&lgpassword=" + a_Password);
-			if(stream == null)
+			InputStream stream = XMLHandler.getXML("api.php?format=xml","action=login&lgname=" + a_Username + "&lgpassword=" + a_Password,true,false);
+			if(stream == null){
+				log.severe("No stream available in Mediawikibot.login()");
 				return false;
+			}
 			
 			Document doc = db.parse(stream);
 			doc.getDocumentElement().normalize();
-			NodeList nodeLst = doc.getElementsByTagName("api");
+			NodeList node = doc.getElementsByTagName("api");
 			
-			Node fstNode = nodeLst.item(0);
-			Element fstElmnt = (Element) fstNode;
-		    
-			
-		    NodeList fstNmElmntLst = fstElmnt.getElementsByTagName("login");
-		    if(fstNmElmntLst.item(0).getAttributes().getNamedItem("result").getNodeValue().compareTo("Success") != 0) {
-		    	textView.append("Node value:" + fstNmElmntLst.item(0).getAttributes().getNamedItem("result").getNodeValue());
+			node = XMLHandler.getNode(node,"login");
+		    if(XMLHandler.getNodeAttribute(node, "result").compareTo("Success") != 0) {
+		    	log.severe("Login FAILED. \nNode value:" + XMLHandler.getNodeAttribute(node, "result"));
 		    	return false;
 		    }
-			lgusername = fstNmElmntLst.item(0).getAttributes().getNamedItem("lgusername").getNodeValue();
-			lguserid = fstNmElmntLst.item(0).getAttributes().getNamedItem("lguserid").getNodeValue();
-			lgsessionid = fstNmElmntLst.item(0).getAttributes().getNamedItem("sessionid").getNodeValue();
-			cookieprefix = fstNmElmntLst.item(0).getAttributes().getNamedItem("cookieprefix").getNodeValue();
+			XMLHandler.setLoginInfo(node);
 			
-			if(fstNmElmntLst.item(0).getAttributes().getNamedItem("result").getNodeValue() == "Succes") {
-				return true;
-			} else {
-				return false;
-			}
+			return true;
 		} catch (SAXException e) {
-			textView.append("\nSAXException");
+			log.severe("SAXException in MediawikiBot.login().\n Info: " + e.getMessage());
 		} catch (IOException e) {
-			textView.append("\nIOException");
+			log.severe("IOException in MediawikiBot.login().\n Info: " + e.getMessage());
 		} catch (ParserConfigurationException e) {
-			textView.append("\nParserConfigurationException");
+			log.severe("ParserConfigurationException in MediawikiBot.login().\n Info: " + e.getMessage());
 		}
 		return false;
-	}
-	
-	private InputStream getPostXML(String a_PostVar) {
-		try{
-			URL url = new URL(m_URL);
-	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-	        connection.setDoOutput(true);
-	        connection.setRequestMethod("POST");
-	
-	        OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
-	        writer.write(a_PostVar);
-	        writer.close();
-	        
-	        return connection.getInputStream();
-		}catch (IOException e) {
-			return null;
-		}
-	}
-	
-	private InputStream getPostXMLAgain(String a_PostVar) {
-		try{
-			URL url = new URL(m_URL);
-			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-	        connection.setRequestProperty("Cookie",cookieprefix + "UserID=" + lguserid + "; " + cookieprefix + "UserName=" + lgusername + "; " + cookieprefix + "_session=" + lgsessionid);
-	        connection.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
-	        connection.setDoOutput(true);
-	        connection.setRequestMethod("POST");
-	        
-	        OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
-	        writer.write(a_PostVar);
-	        writer.close();
-	        
-	        return connection.getInputStream();
-		}catch (IOException e) {
-			return null;
-		}
-	}
-	
-	private InputStream getXML(String a_GetVar) {
-		try{
-			URL url = new URL(m_URL + "&" + a_GetVar);
-	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-	        connection.setRequestProperty("Cookie",cookieprefix + "UserID=" + lguserid + "; " + cookieprefix + "UserName=" + lgusername + "; " + cookieprefix + "_session=" + lgsessionid);
-	        return connection.getInputStream();
-		}catch (IOException e) {
-			return null;
-		}
 	}
 	
 	public String getEditToken() {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		DocumentBuilder db;
-		Logger log = Logger.getLogger(MediawikiBot.class.getName());
 		log.info("obtaining edit token");
 		try {
 			db = dbf.newDocumentBuilder();
-			InputStream stream = getXML("action=query&prop=info&intoken=edit&titles="+Config.data("xmlfrom"));
-			if(stream == null)
+			String postVars = "action=query&prop=info&intoken=edit&titles="+Config.data("xmlfrom");
+			log.info("Post vars in MediawikiBot.getEditToken() are " + postVars);
+			InputStream stream = XMLHandler.getXML("api.php?result=xml",postVars,false,true);
+			if(stream == null){
+				log.severe("No stream available in Mediawikibot.login()");
 				return "";
+			}
 			
 			Document doc = db.parse(stream);
 			doc.getDocumentElement().normalize();
-			NodeList nodeLst = doc.getElementsByTagName("api");
+			NodeList node = doc.getElementsByTagName("api");
 			
-			Node fstNode = nodeLst.item(0);
-			Element fstElmnt = (Element) fstNode;
-			NodeList fstNmElmntLst = fstElmnt.getElementsByTagName("query");
+			node = XMLHandler.getNode(node,"query");
+			node = XMLHandler.getNode(node,"pages");
+			node = XMLHandler.getNode(node,"page");
 			
-			fstNode = nodeLst.item(0);
-			fstElmnt = (Element) fstNode;
-			fstNmElmntLst = fstElmnt.getElementsByTagName("pages");
-			
-			fstNode = nodeLst.item(0);
-			fstElmnt = (Element) fstNode;
-			fstNmElmntLst = fstElmnt.getElementsByTagName("page");
-			
-			edittoken = fstNmElmntLst.item(0).getAttributes().getNamedItem("edittoken").getNodeValue();
+			edittoken = XMLHandler.getNodeAttribute(node, "edittoken");
 			log.info("edittoken = "+edittoken);
 
 		} catch (SAXException e) {
-			textView.append("\nSAXException");
+			log.severe("SAXException in getEditToken().\n Info: " + e.getMessage());
 		} catch (IOException e) {
-			textView.append("\nIOException");
+			log.severe("IOException in getEditToken().\n Info: " + e.getMessage());
 		} catch (ParserConfigurationException e) {
-			textView.append("\nParserConfigurationException");
+			log.severe("ParserConfigurationException in getEditToken().\n Info: " + e.getMessage());
 		}
 		return "";
 	}
@@ -201,29 +134,23 @@ public class MediawikiBot {
 			
 			String postxml="action=edit&title=" + a_Page + "&section=" + a_Section + "&text=" + a_Content + "&summary=" + summary + "&token=" + edittoken+"&wave_id="+encoded_waveId;
 			textView.append(postxml+"\n");
-			InputStream stream = getPostXMLAgain(postxml);
+			InputStream stream = XMLHandler.getXML("api.php?result=xml", postxml, true, true);
 			if(stream == null) {
 				textView.append("getPostXMLAgain fail");
 				return;
 			}
 			Document doc = db.parse(stream);
 			doc.getDocumentElement().normalize();
-			NodeList nodeLst = doc.getElementsByTagName("api");
+			NodeList node = doc.getElementsByTagName("api");
 			
-			Node fstNode = nodeLst.item(0);
-			Element fstElmnt = (Element) fstNode;
-		    
-		    NodeList fstNmElmntLst = fstElmnt.getElementsByTagName("edit");
-		    Node l_Node = fstNmElmntLst.item(0);
+			node = XMLHandler.getNode(node, "edit");
+		    Node l_Node = node.item(0);
 		    if(l_Node == null) {
 		    	textView.append("\nNode = null\n");
-		    	nodeLst = doc.getElementsByTagName("api");
-		    	fstNode = nodeLst.item(0);
-				fstElmnt = (Element) fstNode;
-			    
-			    fstNmElmntLst = fstElmnt.getElementsByTagName("error");
-			    textView.append("Error: " + fstNmElmntLst.item(0).getAttributes().getNamedItem("code").getNodeValue() + "\n");
-			    textView.append("Info: " + fstNmElmntLst.item(0).getAttributes().getNamedItem("info").getNodeValue() + "\n");
+		    	node= doc.getElementsByTagName("api");
+		    	node = XMLHandler.getNode(node, "error");
+			    textView.append("Error: " + XMLHandler.getNodeAttribute(node,"code") + "\n");
+			    textView.append("Info: " + XMLHandler.getNodeAttribute(node,"info") + "\n");
 			    textView.append("Edittoken: " + edittoken + "\n");
 		    	return;
 		    }
@@ -231,17 +158,14 @@ public class MediawikiBot {
 		    l_Node = l_Node.getAttributes().getNamedItem("result");
 		    if(l_Node == null) {
 		    	textView.append("\nNode = null\n");
-		    	nodeLst = doc.getElementsByTagName("api");
-		    	fstNode = nodeLst.item(0);
-				fstElmnt = (Element) fstNode;
-			    
-			    fstNmElmntLst = fstElmnt.getElementsByTagName("error");
-			    textView.append("Error: " + fstNmElmntLst.item(0).getAttributes().getNamedItem("code").getNodeValue() + "\n");
+		    	node = doc.getElementsByTagName("api");
+		    	node = XMLHandler.getNode(node, "error");
+			    textView.append("Error: " + XMLHandler.getNodeAttribute(node,"code") + "\n");
 		    	return;
 		    }
 		    
 		    if(l_Node.getNodeValue().compareTo("Success") != 0){
-		    	textView.append("Node value:" + fstNmElmntLst.item(0).getAttributes().getNamedItem("result").getNodeValue());
+		    	textView.append("Node value:" + XMLHandler.getNodeAttribute(node, "result"));
 		    	return;
 		    }
 		} catch (SAXException e) {
