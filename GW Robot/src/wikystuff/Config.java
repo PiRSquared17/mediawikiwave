@@ -20,7 +20,7 @@ public class Config {
 	private static String config_file="settings.xml";
 	private static Config instance = null;
 	private Map<String,String> config_data=Collections.synchronizedMap(new HashMap<String,String>());
-
+	
 	protected Config() throws Exception {
 		readFile();
 	}

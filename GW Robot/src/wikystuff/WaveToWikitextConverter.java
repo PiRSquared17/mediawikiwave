@@ -34,8 +34,8 @@ public class WaveToWikitextConverter {
 	}
 	
 	//pre- and post-tag the same
-	private void replace(String a_AnnotationName, String a_AnnotationValue, String a_Tag, boolean a_RemoveAnnotations){
-		replace(a_AnnotationName,a_AnnotationValue,a_Tag,a_Tag,a_RemoveAnnotations);
+	private void replace(LinkMapChar list,String a_AnnotationName, String a_AnnotationValue, String a_Tag, boolean a_RemoveAnnotations){
+		replace(list,a_AnnotationName,a_AnnotationValue,a_Tag,a_Tag,a_RemoveAnnotations);
 	}
 	
 	//pre- and post-tag differ
@@ -58,7 +58,7 @@ public class WaveToWikitextConverter {
 	
 
 
-	private void replace(LinkedMapChar list,String a_AnnotationName, String a_AnnotationValue,String a_PreTag, String a_PostTag, boolean a_RemoveAnnotations){
+	private void replace(LinkMapChar list,String a_AnnotationName, String a_AnnotationValue,String a_PreTag, String a_PostTag, boolean a_RemoveAnnotations){
 				
 			
 		List<Annotation> l_AnnotationList = m_TextView.getAnnotations(a_AnnotationName);

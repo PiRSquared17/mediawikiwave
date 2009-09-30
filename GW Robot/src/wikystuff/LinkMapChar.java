@@ -12,7 +12,7 @@ import java.util.HashMap;
 
 class LinkMapChar {
 	private LinkedChar list=null;
-	private HashMap<int><LinkedChar> map=new HashMap<int><LinkedChar>;
+	private HashMap<int[],LinkedChar> map=new HashMap<int[],LinkedChar>();
 	
 	/** creates a new data structure from string*/
 	public LinkMapChar(String s) {
@@ -20,7 +20,7 @@ class LinkMapChar {
 
 		LinkedChar currentChar=this.list;
 		while (currentChar.hasMoreChars()) {
-			map.put(currentChar.position,currentChar);
+			map.put(currentChar.position,currentChar); //FIX ME - Need key
 			currentChar=currentChar.getNextLinkedChar();
 		}
 	}
@@ -37,8 +37,9 @@ class LinkMapChar {
 	}	
 
 	/** insert additional unmarked (no position data) String at
-	 position p in this data structure */
-	public insertUnmarkedAt(int position, String s) {
+	 position p in this data structure 
+	 * @return */
+	public void insertUnmarkedAt(int position, String s) {
 		LinkedChar location=map.get(position);
 		location.insertUnmarked(s);
 	}
