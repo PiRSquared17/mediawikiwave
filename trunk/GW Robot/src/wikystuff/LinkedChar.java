@@ -46,6 +46,20 @@ class LinkedChar {
 		}
 	}
 
+	public void insertUnmarked(String s, int offset) {
+		LinkedChar c=this;
+		for (int i=1; i<offset; i++) {
+			if (c!=null)
+				c=c.getNextLinkedChar();
+			else
+				break;
+		}	
+		if (c!=null)
+			c.insertUnmarked(s);
+	}
+
+
+
 	public boolean hasMoreChars() {
 		return this.nextLinkedChar!=null;
 	}

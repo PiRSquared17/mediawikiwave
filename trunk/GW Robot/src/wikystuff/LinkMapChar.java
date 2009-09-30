@@ -45,5 +45,13 @@ class LinkMapChar {
 		LinkedChar location=map.get(new Integer(position));
 		location.insertUnmarked(s);
 	}
+
+	/** insert additional unmarked (no position data) String at
+	 position p in this data structure, with an extra offset */
+	public void insertUnmarkedAt(int position, String s, int offset) {
+		LinkedChar location=map.get(new Integer(position));
+		location.insertUnmarked(s,offset);
+	}
+
 }
 
