@@ -1,3 +1,4 @@
+package wikystuff;
 
 /** represents a single character in a Linked List.
  * a null link terminates the list.
@@ -28,12 +29,23 @@ class LinkedChar {
 		this.nextLinkedChar=newChar;
 	}
 
+	public insertUnmarked(String s) {
+		for (int i=0;i<s.length();i++) {
+			LinkedChar c=new LinkedChar(s.charAt(i),-1);
+			this.insertAfter(c);
+		}
+	}
+
+	public hasMoreChars() {
+		return this.nextLinkedChar!=null;
+	}
+
 	/** create a new Linked List from a string,
 	 * returns the first element in the list */
 	public static LinkedChar buildList(String s) {
 		
 		LinkedChar list=new LinkedChar(s.charAt(0),0);
-		for (i=1;i<s.length();i++) {
+		for (int i=1;i<s.length();i++) {
 			list.insertAfter(s.charAt(i), i)
 		}
 		return list;
