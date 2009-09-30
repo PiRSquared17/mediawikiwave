@@ -29,7 +29,7 @@ public class WikitextToWaveConverter {
 			doReplace |= replace("===","styled-text","HEADING3");
 			doReplace |= replace("==","styled-text","HEADING2");
 			doReplace |= replace("=","styled-text","HEADING1");
-			doReplace |= replace("*","\n","styled-text","BULLETED");
+			doReplace |= replaceLists();
 			doReplace |= replaceParsed("[[", "]]", "wiki/InternalLink");
 			doReplace |= replaceParsed("[", "]", "wiki/ExternalLink");
 			doReplace |= replaceParsed("{{", "}}", "wiki/Template");
@@ -115,6 +115,25 @@ public class WikitextToWaveConverter {
 			//m_TextView.setAnnotation(new Range(l_StartPos,l_StartPos + result.length()), a_AnnotationName, l_Text);
 			return true;
 		} catch (Exception e){ return false;}
+	}
+	
+	private boolean replaceLists() {
+		//Search for starttag
+		int l_StartPos = m_TextView.getText().indexOf("*");
+		if(l_StartPos == -1) //Pre tag not found
+			return false;
+		
+		//Search for endtag
+		int l_EndPos = m_TextView.getText().indexOf("\n", l_StartPos + 1);
+		if(l_EndPos == -1)
+			return false;
+		
+		//Remove tags
+		m_TextView.delete(new Range(l_StartPos,l_StartPos + 1));
+		
+		//Apply Annotation
+		m_TextView.setAnnotation(new Range(l_StartPos,l_EndPos), "styled-text", "BULLETED");
+		return true;
 	}
 	
 	//only a pre-tag
