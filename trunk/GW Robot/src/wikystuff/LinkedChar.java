@@ -1,4 +1,4 @@
-//package wikystuff;
+package wikystuff;
 
 /** represents a single character in a Linked List.
  * a null link terminates the list.
@@ -17,6 +17,12 @@ class LinkedChar {
 		this.character=character;
 		this.position=position;
 	}
+	public LinkedChar(char character, int position, LinkedChar nextLinkedChar) {
+		this.character=character;
+		this.position=position;
+		this.nextLinkedChar=nextLinkedChar;
+	}
+
 
 	public LinkedChar getNextLinkedChar() {
 		return this.nextLinkedChar;
@@ -30,10 +36,13 @@ class LinkedChar {
 		this.nextLinkedChar=newChar;
 	}
 
+	/** do a small insertion, where we don't care about the position of the characters.
+	   don't use this for entire documents. */
 	public void insertUnmarked(String s) {
-		for (int i=0;i<s.length();i++) {
-			LinkedChar c=new LinkedChar(s.charAt(i),-1);
-			this.insertAfter(c);
+		if (s.length()>0) {
+			LinkedChar c=new LinkedChar(s.charAt(0),-1,this.getNextLinkedChar());
+			this.nextLinkedChar=c;
+			c.insertUnmarked(s.substring(1));
 		}
 	}
 
@@ -44,7 +53,6 @@ class LinkedChar {
 	/** create a new Linked List from a string,
 	 * returns the first element in the list */
 	public static LinkedChar buildList(String s) {
-		System.out.println(s);		
 
 		LinkedChar list=new LinkedChar(s.charAt(0),0);
 		LinkedChar current=list;
