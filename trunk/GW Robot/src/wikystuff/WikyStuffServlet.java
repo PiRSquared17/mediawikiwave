@@ -31,8 +31,8 @@ public class WikyStuffServlet extends AbstractRobotServlet {
 				Blip blip = wavelet.appendBlip();
 				TextView textView = blip.getDocument();
 				
-				MediawikiBot bot = new MediawikiBot(Config.data("wiki"),textView);
-				if(!bot.login(Config.data("user"), Config.data("password"))) {
+				MediawikiBot bot = new MediawikiBot(Config.data("wiki"),textView);//FIX ME
+				if(!bot.login(Config.data("user"), Config.data("password"))) {//FIX ME
 					log.severe("Login error!");
 					return;
 				}

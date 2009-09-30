@@ -5,7 +5,7 @@
  * a->b->c->d->(end/null).
  */
 class LinkedChar {
-	public char character=null;
+	public char character=null;//FIX ME - Char can't be null
 	public int position=-1;
 	private LinkedChar nextLinkedChar=null;
 
@@ -24,19 +24,19 @@ class LinkedChar {
 
 	/** insert a new LinkedChar after this one.
 	 * a->b ; a.insertAfter(foo); a->foo->b */
-	public insertAfter(LinkedChar newChar) {
+	public void insertAfter(LinkedChar newChar) {
 		newChar.insertAfter(this.nextLinkedChar);
 		this.nextLinkedChar=newChar;
 	}
 
-	public insertUnmarked(String s) {
+	public void insertUnmarked(String s) {
 		for (int i=0;i<s.length();i++) {
 			LinkedChar c=new LinkedChar(s.charAt(i),-1);
 			this.insertAfter(c);
 		}
 	}
 
-	public hasMoreChars() {
+	public boolean hasMoreChars() {
 		return this.nextLinkedChar!=null;
 	}
 
@@ -46,7 +46,7 @@ class LinkedChar {
 		
 		LinkedChar list=new LinkedChar(s.charAt(0),0);
 		for (int i=1;i<s.length();i++) {
-			list.insertAfter(s.charAt(i), i)
+			list.insertAfter(s.charAt(i), i); //FIX ME - function with these parameters doesn't excist
 		}
 		return list;
 	}
