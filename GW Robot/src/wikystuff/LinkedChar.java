@@ -19,13 +19,14 @@ class LinkedChar {
 		this.character=character;
 		this.position=position;
 	}
+
 	public LinkedChar(char character, int position, LinkedChar nextLinkedChar) {
 		this.character=character;
 		this.position=position;
 		this.nextLinkedChar=nextLinkedChar;
 	}
 
-
+	/** get the next character in the Linked List */
 	public LinkedChar getNextLinkedChar() {
 		return this.nextLinkedChar;
 	}
@@ -39,7 +40,8 @@ class LinkedChar {
 	}
 
 	/** do a small insertion, where we don't care about the position of the characters.
-	   don't use this for entire documents. */
+	   don't use this for entire documents. Future TODO: Current implementation is tail-recursive-ish
+	   replace with a loop? */
 	public void insertUnmarked(String s) {
 		if (s.length()>0) {
 			LinkedChar c=new LinkedChar(s.charAt(0),-1,this.getNextLinkedChar());
@@ -48,7 +50,7 @@ class LinkedChar {
 		}
 	}
 
-	/** same as above, except we insert with some offset */
+	/** same as above, except we insert at some offset to the right*/
 	public void insertUnmarked(String s, int offset) {
 		LinkedChar c=this;
 		for (int i=1; i<offset; i++) {
@@ -62,7 +64,8 @@ class LinkedChar {
 	}
 
 	/** Returns true if there are more characters in this data structure,
-	    returns false if the next link is a null (end of structure) */
+	    returns false if there are no more characters. (The end of the list
+	 is denoted by a null link)  */
 	public boolean hasMoreChars() {
 		return this.nextLinkedChar!=null;
 	}
