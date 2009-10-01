@@ -1,6 +1,9 @@
 package wikystuff;
 
 /** represents a single character in a Linked List.
+ * As additional data, we also remember the original position
+ * the character had in the source String which we used to build the
+ * list (see LinkMapChar for details)
  * a null link terminates the list.
  * a->b->c->d->(end/null).
  */
@@ -8,7 +11,6 @@ class LinkedChar {
 	public char character='\u0000';
 	public int position=-1;
 	private LinkedChar nextLinkedChar=null;
-
 
 	public LinkedChar() {
 	}
@@ -46,6 +48,7 @@ class LinkedChar {
 		}
 	}
 
+	/** same as above, except we insert with some offset */
 	public void insertUnmarked(String s, int offset) {
 		LinkedChar c=this;
 		for (int i=1; i<offset; i++) {
@@ -58,8 +61,8 @@ class LinkedChar {
 			c.insertUnmarked(s);
 	}
 
-
-
+	/** Returns true if there are more characters in this data structure,
+	    returns false if the next link is a null (end of structure) */
 	public boolean hasMoreChars() {
 		return this.nextLinkedChar!=null;
 	}
@@ -78,6 +81,7 @@ class LinkedChar {
 		return list;
 	}
 	
+	/** A string representation, useful for debugging. */
 	public String toString() {
 		return "LinkedChar('"+this.character+"',"+this.position+")";
 	}
