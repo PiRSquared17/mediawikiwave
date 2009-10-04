@@ -13,14 +13,17 @@ import org.w3c.dom.NodeList;
 
 import com.google.wave.api.Range;
 import com.google.wave.api.TextView;
+import com.google.wave.api.Annotation;
 
 public class WikitextToWaveConverter {
 	private TextView m_TextView;
 	private Logger log = Logger.getLogger(WikitextToWaveConverter.class.getName());
-	
-	public String convert(TextView a_TextView) {
+	private LinkMapChar lmc;	
+
+	public void convert(TextView a_TextView) {
 		m_TextView = a_TextView;
 		
+		this.lmc=new LinkMapChar(a_TextView.getText());
 		boolean doReplace = true;
 		while(doReplace) {
 			doReplace = replace("'''","style/fontWeight","bold");
@@ -35,7 +38,11 @@ public class WikitextToWaveConverter {
 			doReplace |= replaceParsed("{{", "}}", "wiki/Template");
 		}
 		
-		return m_TextView.getText();
+		m_TextView.replace(this.lmc.toString());
+		lmc.renumber();
+		for (Annotation annotation: lmc.getAnnotations()) {
+			m_TextView.setAnnotation(annotation.getRange(), annotation.getName(), annotation.getValue());
+		}
 	}
 	
 	//pre- and post-tag the same
@@ -46,24 +53,26 @@ public class WikitextToWaveConverter {
 	
 	//pre- and post-tag differ
 	private boolean replace(String a_PreTag, String a_PostTag, String a_AnnotationName, String a_AnnotationValue){
+
 		//Search for starttag
-		int l_StartPos = m_TextView.getText().indexOf(a_PreTag);
+		int l_StartPos = this.lmc.toString().indexOf(a_PreTag);
 		if(l_StartPos == -1) //Pre tag not found
 			return false;
 		
 		//Search for endtag
-		int l_EndPos = m_TextView.getText().indexOf(a_PostTag, l_StartPos + a_PreTag.length());
+		int l_EndPos = this.lmc.toString().indexOf(a_PostTag, l_StartPos + a_PreTag.length());
 		if(l_EndPos == -1)
 			return false;
 		
+		lmc.setAnnotation(new Range(l_StartPos,l_EndPos), a_AnnotationName, a_AnnotationValue);
 		l_EndPos += a_PostTag.length();
 		
 		//Remove tags
-		m_TextView.delete(new Range(l_EndPos - a_PostTag.length(),l_EndPos));
-		m_TextView.delete(new Range(l_StartPos,l_StartPos + a_PreTag.length()));
+		lmc.deleteAt(new Range(l_EndPos - a_PostTag.length(),l_EndPos));
+		lmc.deleteAt(new Range(l_StartPos,l_StartPos + a_PreTag.length()));
 		
+		lmc.renumber();
 		//Apply Annotation
-		m_TextView.setAnnotation(new Range(l_StartPos,l_EndPos - a_PreTag.length() - a_PostTag.length()), a_AnnotationName, a_AnnotationValue);
 		return true;
 	}
 	
