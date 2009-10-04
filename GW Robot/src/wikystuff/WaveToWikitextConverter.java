@@ -65,8 +65,8 @@ public class WaveToWikitextConverter {
 		for(int i = 0; i < l_AnnotationList.size(); i++) {
 			Annotation l_Annotation = l_AnnotationList.get(i);
 			if(l_Annotation.getValue().compareTo(a_AnnotationValue) == 0) {
-				list.insertUnmarkedAt(l_Annotation.getRange().getEnd(), a_PostTag);
-				list.insertUnmarkedAt(l_Annotation.getRange().getStart(), a_PreTag);
+				list.insertUnmarkedAt(l_Annotation.getRange().getEnd()-1, a_PostTag);
+				list.insertUnmarkedAt(l_Annotation.getRange().getStart()-1, a_PreTag);
 			}
 		}
 	}	
