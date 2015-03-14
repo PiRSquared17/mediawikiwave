@@ -1,0 +1,7 @@
+MediaWiki is the best known Wiki engine. it is used for Wikipedia and many other projects inside and outside of the Wikimedia Foundation. Over time MediaWiki has grown in functionality and at the same time it became hard to use. This has been recognised and the Usability Initiative is developing much needed improvements to make MediaWiki more usable.
+
+Google Wave is a brave new attempt to bring new functionality to well established categories of applications like e-mail, text messaging, wiki and it does it by integrating the functionalities of all of them in a compelling new technology framework. Key elements are the ability to edit in real time with multiple people, an innovative way of showing the history of a wavelet and all this in a WYSIWYG environment.
+
+This project brings this new open source framework to MediaWiki and it aims to show the way how MediaWiki can become more useable for its editors. At this time, the project is planned to run until the beginning of October and at that time it should provide a fully functional editing interface to MediaWiki content.  MediaWiki and Wave developers will have to work hard to make this happen. Obviously, this project is run with full knowledge of the Wikimedia Foundation.
+
+This project will not impact the MediaWiki parser. This project is not aimed at changing the user interface of MediaWiki content.
